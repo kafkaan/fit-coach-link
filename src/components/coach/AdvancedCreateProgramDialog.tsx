@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from 'lucide-react';
-import { WorkoutBuilder } from '../workout/WorkoutBuilder';
-import { WorkoutProgram } from '@/types/workout';
+import { AdvancedWorkoutCreator } from '../workout/AdvancedWorkoutCreator';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useErrorHandler } from '@/hooks/useError';
@@ -23,11 +22,11 @@ export function AdvancedCreateProgramDialog({
   const { profile } = useAuthContext();
   const { handleError, handleSuccess } = useErrorHandler();
 
-  const handleSave = async (programData: Partial<WorkoutProgram>) => {
+  const handleSave = async (programData: any) => {
     if (!profile?.id) return;
 
     try {
-      // Save basic program info to Supabase
+      // Save comprehensive program info to Supabase
       const { data, error } = await supabase
         .from('workout_programs')
         .insert({
@@ -35,37 +34,58 @@ export function AdvancedCreateProgramDialog({
           athlete_id: programData.athleteId || null,
           title: programData.title || 'Programme sans titre',
           description: programData.description || null,
-          instructions: programData.instructions || null,
-          scheduled_date: programData.scheduledDate || null,
-          // For now, we'll store extended data in media_urls as JSON
-          // In a real app, you'd want separate tables for blocks, exercises etc.
+          instructions: JSON.stringify({
+            objectives: programData.objectives || [],
+            programType: programData.programType,
+            phase: programData.phase,
+            difficulty: programData.difficulty,
+            location: programData.location,
+            timeOfDay: programData.timeOfDay,
+            frequency: programData.frequency,
+            coachingCues: programData.coachingCues || [],
+            safetyNotes: programData.contraindications || [],
+          }),
+          scheduled_date: programData.scheduledDate ? new Date(programData.scheduledDate).toISOString().split('T')[0] : null,
+          // Store detailed program structure in media_urls as JSON
           media_urls: programData.blocks ? [JSON.stringify({
             blocks: programData.blocks,
-            goals: programData.goals,
             equipment: programData.equipment,
+            hrZones: programData.hrZones,
+            trackMetrics: programData.trackMetrics,
+            nutritionPlan: {
+              preWorkout: programData.preWorkoutNutrition,
+              postWorkout: programData.postWorkoutNutrition,
+              hydrationReminders: programData.hydrationReminders,
+            },
+            advanced: {
+              autoProgression: programData.autoProgression,
+              deloadWeek: programData.deloadWeek,
+              periodization: programData.periodization,
+              testingProtocol: programData.testingProtocol,
+            },
             tags: programData.tags,
-            difficulty: programData.difficulty,
+            version: 1,
           })] : null,
         })
         .select()
         .single();
 
       if (error) {
-        handleError(error, 'Creation du programme');
+        handleError(error, 'Création du programme avancé');
         return;
       }
 
-      handleSuccess('Programme créé avec succès !');
+      handleSuccess('Programme avancé créé avec succès ! Toutes les données détaillées ont été sauvegardées.');
       setOpen(false);
       onCreated?.();
     } catch (error) {
-      handleError(error, 'Sauvegarde du programme');
+      handleError(error, 'Sauvegarde du programme avancé');
     }
   };
 
-  const handlePreview = (program: WorkoutProgram) => {
-    // For now, just log the program. In a real app, you'd show a preview modal
-    console.log('Program preview:', program);
+  const handlePreview = (program: any) => {
+    // For now, just log the program. In a real app, you'd show a comprehensive preview modal
+    console.log('Programme avancé - Aperçu:', program);
   };
 
   return (
@@ -74,23 +94,25 @@ export function AdvancedCreateProgramDialog({
         {trigger ?? (
           <Button>
             <Plus className="h-4 w-4 mr-2" />
-            Créer un programme avancé
+            Créateur Avancé
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-auto">
-        <DialogHeader>
-          <DialogTitle>Créateur de programme avancé</DialogTitle>
+      <DialogContent className="max-w-[98vw] max-h-[98vh] overflow-hidden p-0">
+        <DialogHeader className="px-6 py-4 border-b">
+          <DialogTitle>Créateur de Programme Ultra-Avancé</DialogTitle>
           <DialogDescription>
-            Créez un programme d'entraînement complet avec des blocs d'exercices personnalisés
+            Interface complète avec tous les paramètres possibles pour créer des programmes d'entraînement professionnels
           </DialogDescription>
         </DialogHeader>
         
-        <WorkoutBuilder
-          onSave={handleSave}
-          onPreview={handlePreview}
-          athletes={athletes}
-        />
+        <div className="flex-1 overflow-auto">
+          <AdvancedWorkoutCreator
+            onSave={handleSave}
+            onPreview={handlePreview}
+            athletes={athletes}
+          />
+        </div>
       </DialogContent>
     </Dialog>
   );
