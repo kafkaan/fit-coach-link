@@ -23,25 +23,8 @@ const CoachStats = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  // Données mockées pour les graphiques
-  const weeklyData = [
-    { name: 'Lun', completed: 12, assigned: 15 },
-    { name: 'Mar', completed: 10, assigned: 12 },
-    { name: 'Mer', completed: 8, assigned: 10 },
-    { name: 'Jeu', completed: 15, assigned: 18 },
-    { name: 'Ven', completed: 14, assigned: 16 },
-    { name: 'Sam', completed: 6, assigned: 8 },
-    { name: 'Dim', completed: 4, assigned: 5 },
-  ];
-
-  const fitnessData = [
-    { name: 'Jan', motivation: 7.2, energy: 6.8, fatigue: 4.1 },
-    { name: 'Fev', motivation: 7.5, energy: 7.1, fatigue: 3.9 },
-    { name: 'Mar', motivation: 8.1, energy: 7.8, fatigue: 3.2 },
-    { name: 'Avr', motivation: 7.9, energy: 7.5, fatigue: 3.5 },
-    { name: 'Mai', motivation: 8.3, energy: 8.0, fatigue: 2.8 },
-    { name: 'Jun', motivation: 8.5, energy: 8.2, fatigue: 2.5 },
-  ];
+  const [weeklyData, setWeeklyData] = useState<{ name: string; completed: number; assigned: number }[]>([]);
+  const [fitnessData, setFitnessData] = useState<{ name: string; motivation: number; energy: number; fatigue: number }[]>([]);
 
   useEffect(() => {
     fetchStats();
@@ -83,8 +66,36 @@ const CoachStats = () => {
         totalAthletes: athletesCount || 0,
         totalPrograms: programsCount || 0,
         completionRate: Math.round(completionRate),
-        activeThisWeek: Math.floor((athletesCount || 0) * 0.7), // Mock calculation
+        activeThisWeek: 0,
       });
+
+      // Weekly activity (RPC)
+      const { data: weekly, error: weeklyError } = await supabase.rpc('coach_weekly_activity');
+      if (!weeklyError) {
+        const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+        setWeeklyData((weekly || []).map((row: any) => ({
+          name: days[new Date(row.day_date).getDay()],
+          assigned: row.assigned_count,
+          completed: row.completed_count,
+        })));
+      }
+
+      // Active this week (RPC)
+      const { data: activeWeek, error: activeError } = await supabase.rpc('coach_active_this_week');
+      if (!activeError && typeof activeWeek === 'number') {
+        setStats(s => ({ ...s, activeThisWeek: activeWeek }));
+      }
+
+      // Fitness trends (RPC)
+      const { data: trends, error: trendsError } = await supabase.rpc('coach_fitness_trends');
+      if (!trendsError) {
+        setFitnessData((trends || []).map((t: any) => ({
+          name: t.month_label,
+          motivation: Number(t.motivation_avg) || 0,
+          energy: Number(t.energy_avg) || 0,
+          fatigue: Number(t.fatigue_avg) || 0,
+        })));
+      }
     } catch (error) {
       console.error('Error fetching stats:', error);
       toast({

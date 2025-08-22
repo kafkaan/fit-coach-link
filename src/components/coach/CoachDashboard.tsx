@@ -3,14 +3,18 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { Dumbbell, Users, BarChart3, LogOut, Plus } from 'lucide-react';
+import { Dumbbell, Users, BarChart3, LogOut, Plus, User2 } from 'lucide-react';
 import AthletesList from './AthletesList';
 import ProgramsManager from './ProgramsManager';
 import CoachStats from './CoachStats';
+import AddAthleteDialog from './AddAthleteDialog';
+import CreateProgramDialog from './CreateProgramDialog';
 
 const CoachDashboard = () => {
   const { profile, signOut } = useAuthContext();
   const [activeTab, setActiveTab] = useState('athletes');
+  const [athletesReloadKey, setAthletesReloadKey] = useState(0);
+  const [programsReloadKey, setProgramsReloadKey] = useState(0);
 
   const handleSignOut = async () => {
     await signOut();
@@ -32,10 +36,17 @@ const CoachDashboard = () => {
               </p>
             </div>
           </div>
-          <Button variant="outline" onClick={handleSignOut}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Déconnexion
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" asChild>
+              <a href="/profile">
+                <User2 className="h-4 w-4 mr-2" />Profil
+              </a>
+            </Button>
+            <Button variant="outline" onClick={handleSignOut}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Déconnexion
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -65,12 +76,12 @@ const CoachDashboard = () => {
                   Gérez vos athlètes et suivez leurs progrès
                 </p>
               </div>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Ajouter un athlète
-              </Button>
+              <AddAthleteDialog 
+                onAdded={() => setAthletesReloadKey((k) => k + 1)}
+                trigger={<Button><Plus className="h-4 w-4 mr-2" />Ajouter un athlète</Button>} 
+              />
             </div>
-            <AthletesList />
+            <AthletesList reloadKey={athletesReloadKey} />
           </TabsContent>
 
           <TabsContent value="programs" className="space-y-6">
@@ -81,12 +92,12 @@ const CoachDashboard = () => {
                   Créez et assignez des programmes personnalisés
                 </p>
               </div>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Nouveau programme
-              </Button>
+              <CreateProgramDialog 
+                onCreated={() => setProgramsReloadKey((k) => k + 1)}
+                trigger={<Button><Plus className="h-4 w-4 mr-2" />Nouveau programme</Button>} 
+              />
             </div>
-            <ProgramsManager />
+            <ProgramsManager reloadKey={programsReloadKey} />
           </TabsContent>
 
           <TabsContent value="stats" className="space-y-6">

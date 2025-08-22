@@ -6,7 +6,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { User, MessageCircle, TrendingUp } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
+import AddAthleteDialog from './AddAthleteDialog';
 
 interface Athlete {
   id: string;
@@ -17,32 +19,23 @@ interface Athlete {
   created_at: string;
 }
 
-const AthletesList = () => {
+type AthletesListProps = { reloadKey?: number };
+
+const AthletesList = ({ reloadKey = 0 }: AthletesListProps) => {
   const { profile } = useAuthContext();
+  const navigate = useNavigate();
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchAthletes();
-  }, [profile]);
+  }, [profile, reloadKey]);
 
   const fetchAthletes = async () => {
     if (!profile?.id) return;
 
     try {
-      const { data, error } = await supabase
-        .from('coach_athlete_relationships')
-        .select(`
-          athlete:profiles!coach_athlete_relationships_athlete_id_fkey (
-            id,
-            first_name,
-            last_name,
-            email,
-            avatar_url,
-            created_at
-          )
-        `)
-        .eq('coach_id', profile.id);
+      const { data, error } = await supabase.rpc('list_coach_athletes');
 
       if (error) {
         toast({
@@ -53,8 +46,7 @@ const AthletesList = () => {
         return;
       }
 
-      const athletesList = data?.map(item => item.athlete).filter(Boolean) || [];
-      setAthletes(athletesList as Athlete[]);
+      setAthletes((data as Athlete[]) || []);
     } catch (error) {
       console.error('Error fetching athletes:', error);
       toast({
@@ -96,7 +88,7 @@ const AthletesList = () => {
           <p className="text-muted-foreground text-center mb-4">
             Vous n'avez pas encore d'athlètes dans votre équipe.
           </p>
-          <Button>Ajouter un athlète</Button>
+          <AddAthleteDialog onAdded={fetchAthletes} trigger={<Button>Ajouter un athlète</Button>} />
         </CardContent>
       </Card>
     );
@@ -131,7 +123,7 @@ const AthletesList = () => {
                 <MessageCircle className="h-4 w-4 mr-2" />
                 Message
               </Button>
-              <Button size="sm" className="flex-1">
+              <Button size="sm" className="flex-1" onClick={() => navigate(`/athlete/${athlete.id}/progress`)}>
                 <TrendingUp className="h-4 w-4 mr-2" />
                 Progrès
               </Button>

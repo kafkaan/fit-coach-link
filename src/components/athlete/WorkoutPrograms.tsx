@@ -16,10 +16,8 @@ interface WorkoutProgram {
   instructions: string;
   scheduled_date: string;
   created_at: string;
-  coach: {
-    first_name: string;
-    last_name: string;
-  };
+  coach_first_name?: string;
+  coach_last_name?: string;
   session?: {
     id: string;
     completed: boolean;
@@ -40,27 +38,7 @@ const WorkoutPrograms = () => {
     if (!profile?.id) return;
 
     try {
-      const { data, error } = await supabase
-        .from('workout_programs')
-        .select(`
-          id,
-          title,
-          description,
-          instructions,
-          scheduled_date,
-          created_at,
-          coach:profiles!workout_programs_coach_id_fkey (
-            first_name,
-            last_name
-          ),
-          workout_sessions (
-            id,
-            completed,
-            completed_at
-          )
-        `)
-        .eq('athlete_id', profile.id)
-        .order('scheduled_date', { ascending: true, nullsFirst: false });
+      const { data, error } = await supabase.rpc('list_my_programs');
 
       if (error) {
         toast({
@@ -71,10 +49,20 @@ const WorkoutPrograms = () => {
         return;
       }
 
-      // Format data to include session info
-      const formattedPrograms = (data || []).map(program => ({
-        ...program,
-        session: program.workout_sessions?.[0] || null
+      const formattedPrograms: WorkoutProgram[] = (data || []).map((row: any) => ({
+        id: row.id,
+        title: row.title,
+        description: row.description,
+        instructions: row.instructions,
+        scheduled_date: row.scheduled_date,
+        created_at: row.created_at,
+        coach_first_name: row.coach_first_name,
+        coach_last_name: row.coach_last_name,
+        session: row.session_id ? {
+          id: row.session_id,
+          completed: !!row.session_completed,
+          completed_at: row.session_completed_at,
+        } : undefined,
       }));
 
       setPrograms(formattedPrograms);
@@ -205,7 +193,7 @@ const WorkoutPrograms = () => {
                   </CardTitle>
                   <CardDescription className="flex items-center gap-2">
                     <User className="h-3 w-3" />
-                    Coach: {program.coach.first_name} {program.coach.last_name}
+                    Coach: {program.coach_first_name || '—'} {program.coach_last_name || ''}
                   </CardDescription>
                 </div>
                 <div className="flex flex-col gap-2">
