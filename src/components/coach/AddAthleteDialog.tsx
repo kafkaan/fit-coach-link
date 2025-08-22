@@ -23,7 +23,7 @@ const AddAthleteDialog = ({ onAdded, trigger }: AddAthleteDialogProps) => {
     if (!profile?.id || !email) return;
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.rpc('link_athlete_by_email', { athlete_email: email.trim().toLowerCase() });
+      const { error } = await (supabase as any).rpc('link_athlete_by_email', { athlete_email: email.trim().toLowerCase() });
       if (error) {
         const message = error.message?.toLowerCase() || '';
         if (message.includes('not found')) {

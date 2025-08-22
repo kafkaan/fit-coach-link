@@ -70,7 +70,7 @@ const CoachStats = () => {
       });
 
       // Weekly activity (RPC)
-      const { data: weekly, error: weeklyError } = await supabase.rpc('coach_weekly_activity');
+      const { data: weekly, error: weeklyError } = await (supabase as any).rpc('coach_weekly_activity');
       if (!weeklyError) {
         const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
         setWeeklyData((weekly || []).map((row: any) => ({
@@ -81,13 +81,13 @@ const CoachStats = () => {
       }
 
       // Active this week (RPC)
-      const { data: activeWeek, error: activeError } = await supabase.rpc('coach_active_this_week');
+      const { data: activeWeek, error: activeError } = await (supabase as any).rpc('coach_active_this_week');
       if (!activeError && typeof activeWeek === 'number') {
         setStats(s => ({ ...s, activeThisWeek: activeWeek }));
       }
 
       // Fitness trends (RPC)
-      const { data: trends, error: trendsError } = await supabase.rpc('coach_fitness_trends');
+      const { data: trends, error: trendsError } = await (supabase as any).rpc('coach_fitness_trends');
       if (!trendsError) {
         setFitnessData((trends || []).map((t: any) => ({
           name: t.month_label,

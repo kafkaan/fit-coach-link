@@ -9,6 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import CreateProgramDialog from './CreateProgramDialog';
+import { AdvancedCreateProgramDialog } from './AdvancedCreateProgramDialog';
 
 interface WorkoutProgram {
   id: string;
@@ -43,7 +44,7 @@ const ProgramsManager = ({ reloadKey = 0 }: ProgramsManagerProps) => {
     if (!profile?.id) return;
 
     try {
-      const { data, error } = await supabase.rpc('list_coach_programs');
+      const { data, error } = await (supabase as any).rpc('list_coach_programs');
 
       if (error) {
         toast({
@@ -77,7 +78,7 @@ const ProgramsManager = ({ reloadKey = 0 }: ProgramsManagerProps) => {
 
   const fetchAthletes = async () => {
     if (!profile?.id) return;
-    const { data } = await supabase.rpc('list_coach_athletes');
+    const { data } = await (supabase as any).rpc('list_coach_athletes');
     setAthleteOptions((data || []).map((a: any) => ({ id: a.id, label: `${a.first_name} ${a.last_name}` })));
   };
 
@@ -135,7 +136,14 @@ const ProgramsManager = ({ reloadKey = 0 }: ProgramsManagerProps) => {
           <p className="text-muted-foreground text-center mb-4">
             Vous n'avez pas encore créé de programmes d'entraînement.
           </p>
-          <CreateProgramDialog onCreated={fetchPrograms} trigger={<Button><Plus className="h-4 w-4 mr-2" />Créer un programme</Button>} />
+          <div className="flex items-center gap-3 mb-6">
+            <CreateProgramDialog onCreated={fetchPrograms} trigger={<Button size="sm"><Plus className="h-4 w-4 mr-2" />Programme simple</Button>} />
+            <AdvancedCreateProgramDialog 
+              onCreated={fetchPrograms} 
+              athletes={athleteOptions.map(a => ({ id: a.id, name: a.label }))}
+              trigger={<Button size="sm" variant="outline"><Plus className="h-4 w-4 mr-2" />Programme avancé</Button>} 
+            />
+          </div>
         </CardContent>
       </Card>
     );

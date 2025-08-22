@@ -8,6 +8,7 @@ import { Calendar, User, Play, CheckCircle, Clock } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { AthleteProgram } from '@/types/supabase';
 
 interface WorkoutProgram {
   id: string;
@@ -38,7 +39,7 @@ const WorkoutPrograms = () => {
     if (!profile?.id) return;
 
     try {
-      const { data, error } = await supabase.rpc('list_my_programs');
+      const { data, error } = await (supabase as any).rpc('list_my_programs');
 
       if (error) {
         toast({

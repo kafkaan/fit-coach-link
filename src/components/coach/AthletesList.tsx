@@ -35,7 +35,7 @@ const AthletesList = ({ reloadKey = 0 }: AthletesListProps) => {
     if (!profile?.id) return;
 
     try {
-      const { data, error } = await supabase.rpc('list_coach_athletes');
+      const { data, error } = await (supabase as any).rpc('list_coach_athletes');
 
       if (error) {
         toast({

@@ -32,7 +32,7 @@ const CreateProgramDialog = ({ onCreated, trigger }: CreateProgramDialogProps) =
     if (!open) return;
     if (!profile?.id) return;
     const fetchAthletes = async () => {
-      const { data, error } = await supabase.rpc('list_coach_athletes');
+      const { data, error } = await (supabase as any).rpc('list_coach_athletes');
       if (error) return;
       const options: AthleteOption[] = (data || []).map((a: any) => ({ id: a.id, label: `${a.first_name} ${a.last_name}` }));
       setAthleteOptions(options);
